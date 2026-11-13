@@ -33,7 +33,7 @@ export async function uploadImage(
   const result = await cloudinary.uploader.upload(
     file as string,
     {
-      folder: folder || "eagle-international-school",
+      folder: folder || "eagle-international-school/pics",
       resource_type,
       transformation,
       public_id,
