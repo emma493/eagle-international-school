@@ -64,7 +64,7 @@ app.get("/:id", async (c) => {
   }
 
   return c.json({ student });
-}
+});
 
 // POST /api/students — register a new student
 app.post("/", async (c) => {
