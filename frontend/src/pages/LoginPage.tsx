@@ -3,14 +3,12 @@ import { useAuth } from "../hooks/useAuth";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
-import { normalizeLoginIdentifier } from "../firebase/config";
-import { useNavigate } from "react-router-dom";
 
+import { BrandMark } from "@/components/ui/BrandMark";
 const SCHOOL_NAME = "Eagle International School";
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
-  const navigate = useNavigate();
+  const { signIn, notice } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,14 +19,11 @@ export default function LoginPage() {
     setError("");
     setSubmitting(true);
     try {
-      // Normalize behind the scenes: Ghanaian phone -> 233...@school.local
-      const loginId = normalizeLoginIdentifier(identifier);
-      await signIn(loginId, password);
-      // RoleRouter handles redirection based on custom claim
+      // Phone numbers are normalised behind the scenes (024XXXXXXX -> 23324XXXXXXX@school.local).
+      // App.tsx routes to the portal for the user's role once the worker confirms it.
+      await signIn(identifier, password);
     } catch (err: any) {
-      setError(
-        err?.message || "Invalid email/phone or password. Please try again."
-      );
+      setError(err?.message || "Could not sign in. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -39,13 +34,11 @@ export default function LoginPage() {
       {/* Desktop: brand left, card right */}
       <div className="max-w-7xl w-full mx-auto flex flex-col lg:flex-row gap-8 items-center">
         <div className="lg:w-1/2 hidden lg:flex flex-col items-center justify-center text-center gap-4 px-8">
-          <div className="w-16 h-16 bg-brand-blue rounded-full flex items-center justify-center text-white text-3xl mb-4">
-            FL
-          </div>
-          <h1 className="text-[60px] font-bold text-brand-blue tracking-tight sentence-case">
-            Future Leaders
+          <BrandMark size={96} />
+          <h1 className="text-hero font-bold text-brand-blue tracking-tight sentence-case">
+            {SCHOOL_NAME}
           </h1>
-          <p className="text-[28px] font-normal text-text-secondary max-w-xs leading-snug">
+          <p className="text-display font-normal text-text-secondary max-w-xs leading-snug">
             A place to grow, learn, and lead.
           </p>
         </div>
@@ -53,10 +46,8 @@ export default function LoginPage() {
         <div className="w-full lg:w-1/2 flex justify-center">
           <Card padding="lg" className="w-full max-w-md shadow-login">
             <div className="text-center mb-8">
-              <div className="w-12 h-12 bg-brand-blue rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl">
-                FL
-              </div>
-              <h2 className="text-28 font-bold text-text-primary sentence-case mb-2">
+              <BrandMark size={56} className="mx-auto mb-4 lg:hidden" />
+              <h2 className="text-display font-bold text-text-primary sentence-case mb-2">
                 Welcome back
               </h2>
               <p className="text-text-secondary text-sm">
@@ -80,10 +71,10 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
-              {error && (
-                <div className="p-3 bg-status-problem-bg rounded-input border border-status-problem-text/20">
-                  <p className="text-status-problem-text text-sm font-500">
-                    {error}
+              {(error || notice) && (
+                <div role="alert" className="p-3 bg-status-problem-bg rounded-input border border-status-problem-text/20">
+                  <p className="text-status-problem-text text-sm font-medium">
+                    {error || notice}
                   </p>
                 </div>
               )}
@@ -97,15 +88,9 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-divider">
-              <Button
-                variant="success"
-                fullWidth
-                className="text-17 h-48"
-              >
-                Create account
-              </Button>
-            </div>
+            <p className="mt-6 pt-4 border-t border-divider text-center text-sm text-text-secondary">
+              Accounts are created by the school office. Forgot your password? Ask the office to reset it.
+            </p>
           </Card>
         </div>
       </div>

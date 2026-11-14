@@ -3,26 +3,33 @@ import { apiRequest } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { TerminalReportPDF, TerminalReportPDFProps } from "@/components/reports/TerminalReportPDF";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { useToast } from "@/hooks/useToast";
 import { downloadTerminalReportPDF } from "@/lib/pdfmake";
-
-const STATUS_COLORS: Record<string, string> = {
-  paid: "badge-good",
-  partial: "badge-attention",
-  owing: "badge-problem",
-};
 
 export default function HeadmasterTerminalReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [schoolSettings, setSchoolSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
     fetchReports();
+    fetchSchoolSettings();
   }, []);
+
+  const fetchSchoolSettings = async () => {
+    try {
+      const res = await apiRequest("/api/school-settings");
+      const data = await res.json();
+      setSchoolSettings(data.settings);
+    } catch (err: any) {
+      // Non-fatal
+    }
+  };
 
   const fetchReports = async () => {
     try {
@@ -94,16 +101,16 @@ export default function HeadmasterTerminalReportsPage() {
           : 0,
       class_position: 1,
       generated_at: new Date().toLocaleDateString(),
-      school_name: "Eagle International School",
-      school_motto: "A place to grow, learn, and lead.",
+      school_name: schoolSettings?.school_name || "Eagle International School",
+      school_motto: schoolSettings?.motto || "A place to grow, learn, and lead.",
     };
 
-    downloadTerminalReportPDF(reportData);
+    downloadTerminalReportPDF(reportData, undefined, schoolSettings?.logo_url, schoolSettings?.headmaster_signature_url);
   };
 
   if (loading) {
     return (
-      <div className="bg-neutral-page min-h-screen p-4">
+      <div className="p-4 md:p-6">
         <div className="card p-6 shadow-card text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto mb-4"></div>
           <p className="text-text-secondary">Loading reports…</p>
@@ -113,11 +120,11 @@ export default function HeadmasterTerminalReportsPage() {
   }
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-28 font-bold text-text-primary sentence-case">Terminal Reports</h1>
+            <h1 className="text-display font-bold text-text-primary sentence-case">Terminal Reports</h1>
             <p className="text-text-secondary">
               Review, add remarks, and publish end-of-term report PDFs for parents.
             </p>
@@ -129,7 +136,7 @@ export default function HeadmasterTerminalReportsPage() {
           {/* Report list */}
           <div className="lg:col-span-2">
             <div className="card p-6 shadow-card mb-6">
-              <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">Draft Reports Awaiting Publication</h3>
+              <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">Draft Reports Awaiting Publication</h3>
               <div className="space-y-3">
                 {reports.length === 0 ? (
                   <div className="text-center py-8 text-text-secondary">
@@ -146,21 +153,17 @@ export default function HeadmasterTerminalReportsPage() {
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="font-500 text-text-primary">{r.student_name}</div>
+                          <div className="font-medium text-text-primary">{r.student_name}</div>
                           <div className="text-text-secondary text-xs">{r.admission_no}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-text-primary font-500">{r.academic_year}</div>
+                          <div className="text-text-primary font-medium">{r.academic_year}</div>
                           <div className="text-text-secondary text-xs">{r.term}</div>
                         </div>
                       </div>
                       <div className="mt-2 flex gap-2">
-                        <span className="badge text-[10px] px-2 py-1 badge-info">
-                          {r.class_name}
-                        </span>
-                        <span className={`badge text-[10px] px-2 py-1 ${r.is_published === 1 ? "badge-good" : "badge-attention"}`}>
-                          {r.is_published === 1 ? "Published" : "Draft"}
-                        </span>
+                        <StatusPill variant="info" label={r.class_name} />
+                        <StatusPill status={r.is_published === 1 ? "published" : "draft"} />
                       </div>
                     </div>
                   ))
@@ -174,7 +177,7 @@ export default function HeadmasterTerminalReportsPage() {
             {selectedReport ? (
               <div className="space-y-6">
                 <div className="card p-6 shadow-card">
-                  <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
+                  <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">
                     {selectedReport.student_name}
                   </h3>
                   <p className="text-text-secondary text-xs mb-4">
@@ -184,7 +187,7 @@ export default function HeadmasterTerminalReportsPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-text-secondary text-xs font-600 mb-1 block sentence-case">Headmaster Remarks</label>
+                      <label className="text-text-secondary text-xs font-semibold mb-1 block sentence-case">Headmaster Remarks</label>
                       <textarea
                         value={selectedReport.headmaster_remarks || ""}
                         onChange={(e) => {
@@ -193,14 +196,14 @@ export default function HeadmasterTerminalReportsPage() {
                             body: JSON.stringify({ headmaster_remarks: e.target.value }),
                           });
                         }}
-                        className="w-full h-32 px-4 text-15 border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
+                        className="w-full h-9 px-4 text-body border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
                         placeholder="Add headmaster remarks…"
                       />
                     </div>
 
                     <div className="pt-4 border-t border-divider">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-text-secondary text-xs font-600 uppercase tracking-wider">Actions</span>
+                        <span className="text-text-secondary text-xs font-semibold uppercase tracking-wider">Actions</span>
                       </div>
                       <Button
                         variant="success"

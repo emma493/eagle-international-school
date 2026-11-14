@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, readError } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -20,10 +20,11 @@ export default function AcademicSettingsPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await apiRequest("/api/school-settings", {
+      const res = await apiRequest("/api/school-settings", {
         method: "PUT",
         body: JSON.stringify(settings),
       });
+      if (!res.ok) throw new Error(await readError(res));
       showToast("success", "Settings saved", "Academic settings updated successfully");
     } catch (err: any) {
       showToast("error", "Failed to save settings", err.message);
@@ -33,10 +34,10 @@ export default function AcademicSettingsPage() {
   };
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-lg mx-auto">
         <div className="card p-8 shadow-card">
-          <h2 className="text-28 font-bold text-text-primary mb-6 sentence-case">Academic Settings</h2>
+          <h2 className="text-display font-bold text-text-primary mb-6 sentence-case">Academic Settings</h2>
           <p className="text-text-secondary mb-6">
             Configure term dates, canteen rate (default GHS 20/day), and grading format for Eagle International School.
           </p>
@@ -70,11 +71,11 @@ export default function AcademicSettingsPage() {
               placeholder="20"
             />
             <div className="flex flex-col">
-              <label className="text-text-secondary text-xs font-500 mb-1 sentence-case">Grading Format</label>
+              <label className="text-text-secondary text-xs font-medium mb-1 sentence-case">Grading Format</label>
               <select
                 value={settings.grading_format}
                 onChange={(e) => setSettings({ ...settings, grading_format: e.target.value })}
-                className="w-full h-52 px-4 text-17 border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
+                className="w-full h-input px-4 text-body-lg border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
               >
                 <option value="numeric">Numeric (1–9)</option>
                 <option value="letter">Letter (A–F)</option>
@@ -88,7 +89,7 @@ export default function AcademicSettingsPage() {
         </div>
 
         <div className="mt-6 card p-6 shadow-card">
-          <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">GES / NaCCA Structure</h3>
+          <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">GES / NaCCA Structure</h3>
           <div className="space-y-2 text-sm text-text-secondary">
             <p>• Creche / Nursery / KG: Competency & developmental rubrics</p>
             <p>• Lower & Upper Primary (Basic 1–6): One class teacher manages all subjects</p>

@@ -1,74 +1,42 @@
-import React from "react";
-
-const SCHOOL_NAME = "Eagle International School";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { apiJson } from "@/lib/api";
+import { NAV } from "@/components/layout/nav";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionCard } from "@/components/layout/SectionCard";
+import { Icon } from "@/components/ui/icons";
 
 export default function HeadmasterPage() {
+  const [d, setD] = useState<any>(null);
+  useEffect(() => { apiJson("/api/dashboard").then(setD).catch(() => {}); }, []);
+  const money = (n?: number) => (n == null ? "—" : `GHS ${n.toFixed(2)}`);
+  const stats: [string, string | number, string][] = [
+    ["Students", d?.students ?? "—", ""],
+    ["Teachers", d?.teachers ?? "—", ""],
+    ["Fees owing", money(d?.fees_owing), "text-status-problem-text"],
+    ["Cash to reconcile", money(d?.cash_to_reconcile), "text-brand-blue"],
+  ];
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-28 font-bold text-text-primary sentence-case">
-              Headmaster Portal
-            </h1>
-            <p className="text-text-secondary">
-              School operations for {SCHOOL_NAME}
-            </p>
+    <PageContainer>
+      <PageHeader title="Headmaster portal" subtitle="School operations for Eagle International School" />
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(([label, value, tone]) => (
+          <div key={label} className="card p-5 shadow-card">
+            <p className="mb-1 text-meta font-semibold text-text-secondary">{label}</p>
+            <p className={`text-display font-bold tabular-nums ${tone}`}>{value}</p>
           </div>
-          <button className="btn-primary px-6">Canteen reconciliation</button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="card p-6 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">
-              Total students
-            </p>
-            <p className="text-3xl font-bold text-text-primary">—</p>
-          </div>
-          <div className="card p-6 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">
-              Fees owing
-            </p>
-            <p className="text-3xl font-bold text-status-problem-text">GHS —</p>
-          </div>
-          <div className="card p-6 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">
-              Cash to reconcile
-            </p>
-            <p className="text-3xl font-bold text-brand-blue">GHS —</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="card p-6 shadow-card">
-              <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
-                Quick actions
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button className="btn-secondary w-full">Register student</button>
-                <button className="btn-secondary w-full">Issue fees</button>
-                <button className="btn-secondary w-full">Assign teacher</button>
-                <button className="btn-secondary w-full">Academic settings</button>
-              </div>
-            </div>
-          </div>
-          <div className="lg:col-span-1">
-            <div className="card p-6 shadow-card">
-              <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
-                Academic settings
-              </h3>
-              <p className="text-text-secondary text-xs mb-4">
-                Term dates, canteen rate (default GHS 20/day), grading format.
-              </p>
-              <button className="btn-primary w-full mb-4">Configure</button>
-              <p className="text-text-secondary text-xs">
-                Current term: not set &bull; Canteen rate: GHS 20.00/day
-              </p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
-    </div>
+      <SectionCard title="Quick actions">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {NAV.headmaster.slice(1).map((i) => (
+            <Link key={i.path} to={i.path} className="btn-secondary inline-flex items-center justify-center gap-2 text-center">
+              <Icon name={i.icon} size={20} /> {i.label}
+            </Link>
+          ))}
+        </div>
+      </SectionCard>
+    </PageContainer>
   );
 }

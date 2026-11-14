@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, saveOrQueue } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { TerminalReportPDF, TerminalReportPDFProps } from "@/components/reports/TerminalReportPDF";
 import { downloadTerminalReportPDF } from "@/lib/pdfmake";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { useToast } from "@/hooks/useToast";
 
 export default function TeacherTerminalReportsPage() {
@@ -48,15 +49,12 @@ export default function TeacherTerminalReportsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiRequest("/api/terminal-reports", {
-        method: "POST",
-        body: JSON.stringify({
-          ...newReport,
-          days_present: parseInt(newReport.days_present) || 0,
-          total_days: parseInt(newReport.total_days) || 0,
-        }),
+      const out = await saveOrQueue("POST", "/api/terminal-reports", {
+        ...newReport,
+        days_present: parseInt(newReport.days_present) || 0,
+        total_days: parseInt(newReport.total_days) || 0,
       });
-      showToast("success", "Draft Saved", "Report draft saved offline-first");
+      showToast("success", out.queued ? "Saved offline" : "Draft saved", out.queued ? "Will sync when online" : "Report draft saved");
       setNewReport({
         student_id: "",
         class_id: "",
@@ -120,7 +118,7 @@ export default function TeacherTerminalReportsPage() {
 
   if (loading) {
     return (
-      <div className="bg-neutral-page min-h-screen p-4">
+      <div className="p-4 md:p-6">
         <div className="card p-6 shadow-card text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto mb-4"></div>
           <p className="text-text-secondary">Loading reports…</p>
@@ -130,11 +128,11 @@ export default function TeacherTerminalReportsPage() {
   }
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-28 font-bold text-text-primary sentence-case">Examination & Terminal Reports</h1>
+            <h1 className="text-display font-bold text-text-primary sentence-case">Examination & Terminal Reports</h1>
             <p className="text-text-secondary">
               Enter class scores (50%) and exam scores (50%), attendance, conduct, and remarks.
               Generate draft PDF reports offline.
@@ -146,7 +144,7 @@ export default function TeacherTerminalReportsPage() {
           {/* Draft entry form */}
           <div className="lg:col-span-2">
             <div className="card p-6 shadow-card mb-6">
-              <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">Draft Report Entry</h3>
+              <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">Draft Report Entry</h3>
               <form onSubmit={saveDraft} className="space-y-4">
                 <Input
                   label="Student ID"
@@ -223,7 +221,7 @@ export default function TeacherTerminalReportsPage() {
 
             {/* Existing reports list */}
             <div className="card p-6 shadow-card">
-              <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">My Reports</h3>
+              <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">My Reports</h3>
               <div className="space-y-3">
                 {reports.length === 0 ? (
                   <div className="text-center py-6 text-text-secondary">
@@ -233,23 +231,21 @@ export default function TeacherTerminalReportsPage() {
                   reports.map((r) => (
                     <div
                       key={r.id}
-                      onClick={() => selectReport(r)}
+                      onClick={() => setSelectedReport(r)}
                       className={`p-4 border border-divider rounded-input cursor-pointer hover:bg-neutral-hover transition-colors ${
                         selectedReport?.id === r.id ? "border-brand-blue bg-brand-blue-tint" : ""
                       }`}
                     >
                       <div className="flex justify-between items-start">
-                        <div className="font-500 text-text-primary">{r.student_name}</div>
+                        <div className="font-medium text-text-primary">{r.student_name}</div>
                         <div className="text-right">
                           <div className="text-text-secondary text-xs">{r.academic_year}</div>
                           <div className="text-text-secondary text-xs">{r.term}</div>
                         </div>
                       </div>
                       <div className="mt-2 flex gap-2">
-                        <span className="badge text-[10px] px-2 py-1 badge-info">{r.class_name}</span>
-                        <span className={`badge text-[10px] px-2 py-1 ${r.is_published === 1 ? "badge-good" : "badge-attention"}`}>
-                          {r.is_published === 1 ? "Published" : "Draft"}
-                        </span>
+                        <StatusPill variant="info" label={r.class_name} />
+                        <StatusPill status={r.is_published === 1 ? "published" : "draft"} />
                       </div>
                     </div>
                   ))
@@ -263,7 +259,7 @@ export default function TeacherTerminalReportsPage() {
             {selectedReport ? (
               <div className="space-y-6">
                 <div className="card p-6 shadow-card">
-                  <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
+                  <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">
                     {selectedReport.student_name}
                   </h3>
                   <p className="text-text-secondary text-xs mb-4">
@@ -273,23 +269,23 @@ export default function TeacherTerminalReportsPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-sm">Days Present</span>
-                      <span className="text-text-primary font-500 text-sm">{selectedReport.days_present}</span>
+                      <span className="text-text-primary font-medium text-sm">{selectedReport.days_present}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-sm">Total Days</span>
-                      <span className="text-text-primary font-500 text-sm">{selectedReport.total_days}</span>
+                      <span className="text-text-primary font-medium text-sm">{selectedReport.total_days}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-sm">Conduct</span>
-                      <span className="text-text-primary font-500 text-sm">{selectedReport.conduct}</span>
+                      <span className="text-text-primary font-medium text-sm">{selectedReport.conduct}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-sm">Attitude</span>
-                      <span className="text-text-primary font-500 text-sm">{selectedReport.attitude}</span>
+                      <span className="text-text-primary font-medium text-sm">{selectedReport.attitude}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-sm">Interest</span>
-                      <span className="text-text-primary font-500 text-sm">{selectedReport.interest}</span>
+                      <span className="text-text-primary font-medium text-sm">{selectedReport.interest}</span>
                     </div>
                   </div>
                 </div>

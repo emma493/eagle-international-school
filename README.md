@@ -18,6 +18,7 @@ A complete, offline-first, real-time Progressive Web App (PWA) for a Ghanaian ba
 ```
 eagle-international-school/
 ├── AGENTS.md              # Master system specification
+├── CLAUDE.md              # Working plan and rules
 ├── frontend/              # Vite + React + Tailwind + Dexie.js + PWA
 ├── worker/                # Cloudflare Workers + Hono + Turso
 ├── school-ui-palette-guide/  # Facebook-inspired UI design guide
@@ -36,7 +37,7 @@ eagle-international-school/
 ### 1. Install dependencies
 
 ```powershell
-npm install
+npm install --legacy-peer-deps
 ```
 
 ### 2. Configure environment
@@ -68,6 +69,18 @@ npx wrangler deploy
 Set custom claims on Firebase Auth users via Firebase Console or Admin SDK:
 - `admin`, `headmaster`, `teacher`, `parent`
 
+## First-time setup (auth)
+
+```powershell
+npm install --legacy-peer-deps
+npm run migrate                 # needs worker/.env (Turso + Firebase service account)
+npm run create-admin -- --email you@school.com --name "Your Name"
+firebase deploy --only database # live_signals rules (read: signed-in, write: Worker only)
+npm test
+```
+
+Then sign in as the admin and create the Headmaster from Admin → Accounts.
+
 ## School Name
 
 **Eagle International School** — configured in `worker/migrations/001_init.sql` and throughout the frontend.
@@ -75,3 +88,18 @@ Set custom claims on Firebase Auth users via Firebase Console or Admin SDK:
 ## License
 
 MIT
+
+## Phase 5 additions (completion pass)
+- **Accounts:** `/api/accounts` creates Firebase users (+ role claim) and Turso rows, password reset, enable/disable. Headmaster manages teachers/parents; Admin manages staff + emergency recovery (admin never sees parents).
+- **Parent app:** `/api/parent/children` + `/api/parent/overview/:id`; child switcher bottom sheet; balance, attendance, books, canteen; live refresh.
+- **Offline:** teacher screens save via `saveOrQueue` (Dexie `sync_queue` + `Idempotency-Key`); `/api/sync/batch` replays through normal routes.
+- **Live pulse:** worker bumps `live_signals/student_{id}` / `teacher_{id}`; frontend `useLiveSignal` listens.
+- **Telemetry:** real Turso size/row counts/latency; optional Turso Platform API usage.
+- Fixed: Firebase token verification (x509 key + `sub` as uid), API base path doubling, teacher-scoped student list.
+
+## Setup
+1. `cp worker/.env.example worker/.env` and `cp frontend/.env.example frontend/.env`, fill in your own values (never commit them).
+2. Apply `worker/migrations/001_init.sql` then `002_phase5.sql` to Turso.
+3. Put worker secrets with `wrangler secret put` (FIREBASE_PRIVATE_KEY, TURSO_AUTH_TOKEN, etc.).
+4. Create the first Admin in Firebase Console and give it the custom claim `{ "role": "admin" }`; add its row to `users`. Everyone else is created in-app.
+5. `npm install` in `frontend/` and `worker/`, then `npm run dev` in each.

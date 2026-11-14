@@ -47,10 +47,10 @@ export default function SubjectsPage() {
   const DEPT_GROUPS = ["EarlyYears", "Primary", "JHS"];
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-3xl mx-auto">
         <div className="card p-6 shadow-card mb-8">
-          <h2 className="text-28 font-bold text-text-primary mb-6 sentence-case">Subject Management</h2>
+          <h2 className="text-display font-bold text-text-primary mb-6 sentence-case">Subject Management</h2>
           <p className="text-text-secondary mb-4">
             Manage subjects by department group (EarlyYears, Primary, JHS) per GES/NaCCA structure.
           </p>
@@ -63,11 +63,11 @@ export default function SubjectsPage() {
               placeholder="e.g. Mathematics"
             />
             <div className="flex flex-col">
-              <label className="text-text-secondary text-xs font-500 mb-1 sentence-case">Department Group</label>
+              <label className="text-text-secondary text-xs font-medium mb-1 sentence-case">Department Group</label>
               <select
                 value={deptGroup}
                 onChange={(e) => setDeptGroup(e.target.value)}
-                className="w-full h-52 px-4 text-17 border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
+                className="w-full h-input px-4 text-body-lg border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
               >
                 {DEPT_GROUPS.map((d) => (
                   <option key={d} value={d}>{d}</option>
@@ -82,9 +82,9 @@ export default function SubjectsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-divider">
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Subject</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Department Group</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Actions</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Subject</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Department Group</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -106,7 +106,7 @@ export default function SubjectsPage() {
                     <td className="py-4 text-text-primary">{subj.name}</td>
                     <td className="py-4 text-text-secondary">{subj.department_group}</td>
                     <td className="py-4 text-right">
-                      <Button variant="secondary" className="text-xs h-32 px-3">
+                      <Button variant="secondary" className="text-xs h-9 px-3">
                         Edit
                       </Button>
                     </td>

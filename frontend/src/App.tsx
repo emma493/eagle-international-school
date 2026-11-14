@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import LoginPage from "./pages/LoginPage";
@@ -6,11 +7,13 @@ import HeadmasterPage from "./pages/HeadmasterPage";
 import TeacherPage from "./pages/TeacherPage";
 import ParentPage from "./pages/ParentPage";
 import { ToastContainer } from "./components/ui/ToastContainer";
+import MaintenanceScreen from "./pages/MaintenanceScreen";
+import { Button } from "./components/ui/Button";
 
 // Admin sub-pages
 import BrandingPage from "./pages/admin/Branding";
 import TelemetryPage from "./pages/admin/Telemetry";
-import StaffCreationPage from "./pages/admin/StaffCreation";
+import AccountsPage from "./pages/AccountsPage";
 
 // Headmaster sub-pages
 import ClassesPage from "./pages/headmaster/Classes";
@@ -26,19 +29,30 @@ import HeadmasterTerminalReportsPage from "./pages/headmaster/TerminalReports";
 import AttendancePage from "./pages/teacher/Attendance";
 import CanteenCollectionPage from "./pages/teacher/CanteenCollection";
 import TeacherTerminalReportsPage from "./pages/teacher/TerminalReports";
+import AssessmentsPage from "./pages/teacher/Assessments";
+import RubricEntryPage from "./pages/teacher/RubricEntry";
 
 // Parent sub-pages
 import BalancePage from "./pages/parent/Balance";
 import ParentTerminalReportsPage from "./pages/parent/TerminalReports";
 
-import Sidebar from "./components/layout/Sidebar";
-import TopBar from "./components/layout/TopBar";
-import BottomTabBar from "./components/layout/BottomTabBar";
+import AppShell from "./components/layout/AppShell";
+import { NotificationsProvider } from "./hooks/NotificationsContext";
+import { useFCM } from "./hooks/useFCM";
 
-const isMobile = () => window.innerWidth < 900;
+// Shared pages
+import ProfilePage from "./pages/ProfilePage";
+import StudentProfilePage from "./pages/StudentProfilePage";
+
+// Dev-only visual review page. The DEV check is replaced at build time, so production bundles drop it.
+const Styleguide = import.meta.env.DEV ? lazy(() => import("./pages/Styleguide")) : null;
+const styleguideRoute = Styleguide ? (
+  <Route path="/__styleguide" element={<Suspense fallback={null}><Styleguide /></Suspense>} />
+) : null;
 
 function App() {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role, maintenance, signOut } = useAuth();
+  const { permission, token, isSupported, isLoading } = useFCM();
 
   const protectedRoutes: Record<string, string> = {
     admin: "/admin",
@@ -62,13 +76,28 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
+          {styleguideRoute}
         </Routes>
       </BrowserRouter>
     );
   }
 
+  // Signed in, but the token carries no valid role (and the worker could not be reached to say why).
+  if (!role) {
+    return (
+      <div className="bg-neutral-page min-h-screen flex items-center justify-center px-4">
+        <div className="card shadow-card p-8 max-w-md text-center">
+          <h1 className="text-display font-bold text-text-primary mb-2">Account not ready</h1>
+          <p className="text-text-secondary mb-6">Your account has no role yet. Please contact the school office.</p>
+          <Button variant="secondary" fullWidth onClick={signOut}>Sign out</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (maintenance && role !== "admin") return <MaintenanceScreen />;
+
   const targetPath = protectedRoutes[role || ""] || "/login";
-  const isMobileView = isMobile();
 
   const headmasterRoutes = (
     <>
@@ -80,6 +109,8 @@ function App() {
       <Route path="/headmaster/academic-settings" element={<AcademicSettingsPage />} />
       <Route path="/headmaster/fee-management" element={<FeeManagementPage />} />
       <Route path="/headmaster/canteen-reconciliation" element={<CanteenReconciliationPage />} />
+      <Route path="/headmaster/accounts" element={<AccountsPage roles={["teacher", "parent"]} title="Teachers & parents" />} />
+      <Route path="/headmaster/students/:studentId" element={<StudentProfilePage />} />
       <Route path="/headmaster/terminal-reports" element={<HeadmasterTerminalReportsPage />} />
     </>
   );
@@ -87,9 +118,12 @@ function App() {
   const teacherRoutes = (
     <>
       <Route path="/teacher" element={<TeacherPage />} />
+      <Route path="/teacher/students/:studentId" element={<StudentProfilePage />} />
       <Route path="/teacher/attendance" element={<AttendancePage />} />
       <Route path="/teacher/canteen-collection" element={<CanteenCollectionPage />} />
       <Route path="/teacher/terminal-reports" element={<TeacherTerminalReportsPage />} />
+      <Route path="/teacher/assessments" element={<AssessmentsPage />} />
+      <Route path="/teacher/rubric-entry" element={<RubricEntryPage />} />
     </>
   );
 
@@ -106,40 +140,33 @@ function App() {
       <Route path="/" element={<Navigate to={targetPath} replace />} />
       <Route path="/login" element={<Navigate to={targetPath} replace />} />
 
-      {/* Admin routes */}
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/admin/branding" element={<BrandingPage />} />
-      <Route path="/admin/telemetry" element={<TelemetryPage />} />
-      <Route path="/admin/staff-creation" element={<StaffCreationPage />} />
+      {role === "admin" && (
+        <>
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/branding" element={<BrandingPage />} />
+          <Route path="/admin/telemetry" element={<TelemetryPage />} />
+        </>
+      )}
+      {role === "admin" && <Route path="/admin/accounts" element={<AccountsPage roles={["headmaster", "teacher", "admin"]} title="Accounts & emergency recovery" />} />}
 
-      {headmasterRoutes}
-      {teacherRoutes}
-      {parentRoutes}
+      <Route path="/profile" element={<ProfilePage />} />
+      {styleguideRoute}
+
+      {role === "headmaster" && headmasterRoutes}
+      {role === "teacher" && teacherRoutes}
+      {role === "parent" && parentRoutes}
+      <Route path="*" element={<Navigate to={targetPath} replace />} />
     </>
   );
 
   return (
     <BrowserRouter>
       <ToastContainer />
-      {isMobileView ? (
-        // Mobile layout: top bar + bottom tab bar
-        <div className="min-h-screen flex flex-col pt-56 pb-14">
-          <TopBar onMenuClick={() => {}} />
+      <NotificationsProvider>
+        <AppShell>
           <Routes>{allRoutes}</Routes>
-          <BottomTabBar />
-        </div>
-      ) : (
-        // Desktop layout: sidebar + content
-        <div className="min-h-screen flex">
-          <Sidebar onToggle={() => {}} />
-          <div className="flex-1 flex flex-col pt-16 pl-280 lg:pl-0 lg:pt-16 lg:pr-12 lg:pb-8">
-            <TopBar onMenuClick={() => {}} />
-            <div className="flex-1 overflow-x-auto">
-              <Routes>{allRoutes}</Routes>
-            </div>
-          </div>
-        </div>
-      )}
+        </AppShell>
+      </NotificationsProvider>
     </BrowserRouter>
   );
 }

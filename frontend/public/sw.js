@@ -1,4 +1,4 @@
-const CACHE_NAME = "future-leaders-v1";
+const CACHE_NAME = "eagle-international-school-v1";
 const ASSETS = [
   "/",
   "/index.html",
@@ -11,6 +11,18 @@ self.addEventListener("install", (event) => {
   );
 });
 
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter((cacheName) => cacheName !== CACHE_NAME).map((cacheName) => {
+          return caches.delete(cacheName);
+        })
+      );
+    })
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
@@ -18,4 +30,30 @@ self.addEventListener("fetch", (event) => {
       return fetch(event.request);
     })
   );
+});
+
+// FCM messaging for push notifications
+importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-sw.js");
+
+const firebaseConfig = {
+  apiKey: self.registration ? self.registration.scope : "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log("[firebase-messaging-sw.js] Received background message ", payload);
+  const notificationTitle = payload.notification?.title || "Eagle International School";
+  const notificationOptions = {
+    body: payload.notification?.body || "",
+    icon: "/icon-192.png",
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });

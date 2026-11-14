@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/hooks/useToast";
 
+import { Icon } from "@/components/ui/icons";
 export default function StudentRegistrationPage() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -38,14 +39,12 @@ export default function StudentRegistrationPage() {
   };
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-xl mx-auto">
         <div className="card p-8 shadow-card">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
-              S
-            </div>
-            <h2 className="text-28 font-bold text-text-primary sentence-case">Student Registration</h2>
+            <div className="w-10 h-10 bg-brand-blue-tint text-brand-blue rounded-full flex items-center justify-center"><Icon name="graduation-cap" size={20} /></div>
+            <h2 className="text-display font-bold text-text-primary sentence-case">Student Registration</h2>
           </div>
           <p className="text-text-secondary mb-6">
             Register a new student with full guardian and medical data. Admission number auto-generates as SCH-YYYY-XXXX.
@@ -73,11 +72,11 @@ export default function StudentRegistrationPage() {
             />
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="text-text-secondary text-xs font-500 mb-1 sentence-case">Gender</label>
+                <label className="text-text-secondary text-xs font-medium mb-1 sentence-case">Gender</label>
                 <select
                   value={form.gender}
                   onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                  className="w-full h-52 px-4 text-17 border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
+                  className="w-full h-input px-4 text-body-lg border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
                 >
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
@@ -85,7 +84,7 @@ export default function StudentRegistrationPage() {
                 </select>
               </div>
               <div className="flex flex-col">
-                <label className="text-text-secondary text-xs font-500 mb-1 sentence-case">Class</label>
+                <label className="text-text-secondary text-xs font-medium mb-1 sentence-case">Class</label>
                 <Input
                   value={form.class_id}
                   onChange={(e) => setForm({ ...form, class_id: e.target.value })}
@@ -125,7 +124,7 @@ export default function StudentRegistrationPage() {
           </form>
 
           <div className="mt-6 p-4 bg-brand-blue-tint rounded-input border border-brand-blue/20">
-            <p className="text-brand-blue text-sm font-500 sentence-case mb-2">
+            <p className="text-brand-blue text-sm font-medium sentence-case mb-2">
               Sibling linking
             </p>
             <p className="text-text-secondary text-sm leading-relaxed">

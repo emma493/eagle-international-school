@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, readError } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/hooks/useToast";
 
+import { Icon } from "@/components/ui/icons";
 export default function CanteenReconciliationPage() {
   const [collections, setCollections] = useState<any[]>([]);
   const [pendingTotal, setPendingTotal] = useState(0);
@@ -25,6 +26,7 @@ export default function CanteenReconciliationPage() {
       showToast("error", "Failed to load collections", err.message);
     } finally {
       setLoading(false);
+    }
   };
 
   const fetchPendingTotal = async () => {
@@ -40,10 +42,8 @@ export default function CanteenReconciliationPage() {
   const reconcileCollection = async (id: string) => {
     setReconciling(true);
     try {
-      await apiRequest(`/api/canteen-collections/${id}/reconcile`, {
-        method: "PUT",
-        body: JSON.stringify({ reconciled_by: "headmaster_uid" }),
-      });
+      const res = await apiRequest(`/api/canteen-collections/${id}/reconcile`, { method: "PUT" });
+      if (!res.ok) throw new Error(await readError(res));
       showToast("success", "Reconciled", "Cash received and collection locked");
       await fetchCollections();
       await fetchPendingTotal();
@@ -58,10 +58,8 @@ export default function CanteenReconciliationPage() {
     setReconciling(true);
     try {
       for (const c of collections) {
-        await apiRequest(`/api/canteen-collections/${c.id}/reconcile`, {
-          method: "PUT",
-          body: JSON.stringify({ reconciled_by: "headmaster_uid" }),
-        });
+        const res = await apiRequest(`/api/canteen-collections/${c.id}/reconcile`, { method: "PUT" });
+        if (!res.ok) throw new Error(await readError(res));
       }
       showToast("success", "All Reconciled", `${collections.length} collections confirmed`);
       await fetchCollections();
@@ -75,7 +73,7 @@ export default function CanteenReconciliationPage() {
 
   if (loading) {
     return (
-      <div className="bg-neutral-page min-h-screen p-4">
+      <div className="p-4 md:p-6">
         <div className="card p-6 shadow-card text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto mb-4"></div>
           <p className="text-text-secondary">Loading collections…</p>
@@ -85,14 +83,12 @@ export default function CanteenReconciliationPage() {
   }
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="card p-6 shadow-card mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
-              R
-            </div>
-            <h2 className="text-28 font-bold text-text-primary sentence-case">Canteen Reconciliation</h2>
+            <div className="w-10 h-10 bg-brand-blue-tint text-brand-blue rounded-full flex items-center justify-center"><Icon name="wallet" size={20} /></div>
+            <h2 className="text-display font-bold text-text-primary sentence-case">Canteen Reconciliation</h2>
           </div>
           <p className="text-text-secondary">
             Teachers hand over physical cash for pending canteen collections. Review each batch and confirm cash received.
@@ -104,7 +100,7 @@ export default function CanteenReconciliationPage() {
         <div className="card p-6 shadow-card mb-8 bg-brand-blue-tint border border-brand-blue/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-text-secondary text-xs font-600 uppercase tracking-wider mb-1">Total Cash to Reconcile</p>
+              <p className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-1">Total Cash to Reconcile</p>
               <p className="text-3xl font-bold text-brand-blue">GHS {pendingTotal.toFixed(2)}</p>
             </div>
             <div className="flex gap-3">
@@ -126,12 +122,12 @@ export default function CanteenReconciliationPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-divider">
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Student</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Teacher</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Plan</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Amount</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Days Covered</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Action</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Student</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Teacher</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Plan</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Amount</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Days Covered</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -145,19 +141,19 @@ export default function CanteenReconciliationPage() {
                 collections.map((c) => (
                   <tr key={c.id} className="border-b border-divider/50 hover:bg-neutral-hover transition-colors">
                     <td className="py-4 text-text-primary">
-                      <div className="font-500">{c.student_name}</div>
+                      <div className="font-medium">{c.student_name}</div>
                       <div className="text-text-secondary text-xs">{c.admission_no}</div>
                     </td>
                     <td className="py-4 text-text-secondary">{c.teacher_name}</td>
                     <td className="py-4 text-text-secondary">{c.plan_type.replace("_", " ").toUpperCase()}</td>
-                    <td className="py-4 text-text-primary text-right font-500">
+                    <td className="py-4 text-text-primary text-right font-medium">
                       GHS {parseFloat(c.amount).toFixed(2)}
                     </td>
                     <td className="py-4 text-text-secondary text-center">{c.days_covered} days</td>
                     <td className="py-4 text-right">
                       <Button
                         variant="secondary"
-                        className="text-xs h-32 px-3"
+                        className="text-xs h-9 px-3"
                         onClick={() => reconcileCollection(c.id)}
                         disabled={reconciling}
                       >
@@ -173,13 +169,13 @@ export default function CanteenReconciliationPage() {
 
         {/* Credit offset info */}
         <div className="mt-8 card p-6 shadow-card">
-          <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">Surplus Credit Offset</h3>
+          <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">Surplus Credit Offset</h3>
           <p className="text-text-secondary text-sm mb-4">
             Only the Headmaster can apply a student's Surplus Credit (from absent prepaid canteen days)
             toward a fee debt, after obtaining parent consent.
           </p>
           <div className="bg-neutral-hover rounded-input p-4">
-            <p className="text-text-secondary text-xs font-600 uppercase tracking-wider mb-2">Coming Soon</p>
+            <p className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-2">Coming Soon</p>
             <p className="text-text-secondary text-sm">
               Credit offset interface will allow Headmaster to select a student, view their surplus credit
               balance, and apply it toward an outstanding fee ledger item.

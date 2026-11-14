@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/hooks/useToast";
 
+import { Icon } from "@/components/ui/icons";
 export default function StaffCreationPage() {
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
-  const createStaff = async (e: React.FormEvent) => {
+  const createStaff = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -40,14 +41,12 @@ export default function StaffCreationPage() {
   };
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-lg mx-auto">
         <div className="card p-8 shadow-card">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
-              S
-            </div>
-            <h2 className="text-28 font-bold text-text-primary sentence-case">Create Staff Account</h2>
+            <div className="w-10 h-10 bg-brand-blue-tint text-brand-blue rounded-full flex items-center justify-center"><Icon name="users" size={20} /></div>
+            <h2 className="text-display font-bold text-text-primary sentence-case">Create Staff Account</h2>
           </div>
           <p className="text-text-secondary mb-6">
             Bootstrap the initial Headmaster and staff accounts. The Admin portal creates the first Headmaster
@@ -81,10 +80,10 @@ export default function StaffCreationPage() {
               required
             />
             <div className="space-y-2">
-              <label className="block text-text-secondary text-xs font-500 mb-1 sentence-case">Role</label>
+              <label className="block text-text-secondary text-xs font-medium mb-1 sentence-case">Role</label>
               <select
                 name="role"
-                className="w-full h-52 px-4 text-17 border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
+                className="w-full h-input px-4 text-body-lg border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
               >
                 <option value="headmaster">Headmaster</option>
                 <option value="teacher">Teacher</option>
@@ -98,7 +97,7 @@ export default function StaffCreationPage() {
           </form>
 
           <div className="mt-6 p-4 bg-brand-blue-tint rounded-input border border-brand-blue/20">
-            <p className="text-brand-blue text-sm font-500 sentence-case mb-2">
+            <p className="text-brand-blue text-sm font-medium sentence-case mb-2">
               Privacy boundary
             </p>
             <p className="text-text-secondary text-sm leading-relaxed">

@@ -20,7 +20,7 @@ export default function BrandingPage() {
     }
   };
 
-  const saveSettings = async (e: React.FormEvent) => {
+  const saveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -44,9 +44,9 @@ export default function BrandingPage() {
 
   if (!settings) {
     return (
-      <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+      <div className="p-4 md:p-6">
         <div className="card p-8 shadow-card max-w-md mx-auto">
-          <h2 className="text-28 font-bold text-text-primary mb-6 sentence-case">School Branding</h2>
+          <h2 className="text-display font-bold text-text-primary mb-6 sentence-case">School Branding</h2>
           <p className="text-text-secondary text-sm">Loading settings…</p>
         </div>
       </div>
@@ -54,10 +54,10 @@ export default function BrandingPage() {
   }
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         <div className="card p-8 shadow-card mb-8">
-          <h2 className="text-28 font-bold text-text-primary mb-6 sentence-case">School Branding</h2>
+          <h2 className="text-display font-bold text-text-primary mb-6 sentence-case">School Branding</h2>
           <p className="text-text-secondary mb-6">
             Manage global branding for Eagle International School. Changes apply across all portals.
           </p>
@@ -111,31 +111,31 @@ export default function BrandingPage() {
         </div>
 
         <div className="card p-6 shadow-card">
-          <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">Current Settings</h3>
+          <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">Current Settings</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-text-secondary">School Name</span>
-              <span className="text-text-primary font-500 sentence-case">{settings.school_name}</span>
+              <span className="text-text-primary font-medium sentence-case">{settings.school_name}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Academic Year</span>
-              <span className="text-text-primary font-500">{settings.current_academic_year}</span>
+              <span className="text-text-primary font-medium">{settings.current_academic_year}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Current Term</span>
-              <span className="text-text-primary font-500">{settings.current_term}</span>
+              <span className="text-text-primary font-medium">{settings.current_term}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Canteen Daily Rate</span>
-              <span className="text-text-primary font-500">GHS {settings.canteen_daily_rate}</span>
+              <span className="text-text-primary font-medium">GHS {settings.canteen_daily_rate}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Grading Format</span>
-              <span className="text-text-primary font-500">{settings.grading_format}</span>
+              <span className="text-text-primary font-medium">{settings.grading_format}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Maintenance Mode</span>
-              <span className={`font-500 ${settings.maintenance_mode ? "text-alert-red" : "text-success-green"}`}>
+              <span className={`font-medium ${settings.maintenance_mode ? "text-alert-red" : "text-success-green"}`}>
                 {settings.maintenance_mode ? "ON" : "OFF"}
               </span>
             </div>

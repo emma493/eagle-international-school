@@ -47,10 +47,10 @@ export default function TeacherAssignmentsPage() {
   }, []);
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="card p-6 shadow-card mb-8">
-          <h2 className="text-28 font-bold text-text-primary mb-6 sentence-case">Teacher Assignments</h2>
+          <h2 className="text-display font-bold text-text-primary mb-6 sentence-case">Teacher Assignments</h2>
           <p className="text-text-secondary mb-4">
             Assign teachers to classes. Primary teachers handle all subjects; JHS teachers handle specific class-subject pairs (GES/NaCCA model).
           </p>
@@ -82,10 +82,10 @@ export default function TeacherAssignmentsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-divider">
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Teacher</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Class</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Subject</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Actions</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Teacher</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Class</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Subject</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +108,7 @@ export default function TeacherAssignmentsPage() {
                     <td className="py-4 text-text-primary">{a.class_name}</td>
                     <td className="py-4 text-text-secondary">{a.subject_name || "All subjects (Primary)"}</td>
                     <td className="py-4 text-right">
-                      <Button variant="secondary" className="text-xs h-32 px-3">
+                      <Button variant="secondary" className="text-xs h-9 px-3">
                         Remove
                       </Button>
                     </td>

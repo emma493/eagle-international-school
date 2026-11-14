@@ -13,6 +13,8 @@ export interface TerminalReportData {
   term: string;
   school_name: string;
   school_motto?: string;
+  school_logo_url?: string;
+  headmaster_signature_url?: string;
   days_present: number;
   total_days: number;
   conduct: string;
@@ -21,6 +23,7 @@ export interface TerminalReportData {
   class_teacher_remarks: string;
   headmaster_remarks: string;
   is_published: number;
+  grading_format?: "numeric" | "letter";
   subjects: Array<{
     subject_name: string;
     class_score: number;
@@ -35,6 +38,29 @@ export interface TerminalReportData {
   generated_at: string;
 }
 
+/** Compute GES grade (1-9 numeric or A-F letter) from a 0-100 score. */
+export function computeGrade(score: number, format: "numeric" | "letter" = "numeric"): string | number {
+  if (format === "letter") {
+    if (score >= 80) return "A";
+    if (score >= 70) return "B";
+    if (score >= 60) return "C";
+    if (score >= 50) return "D";
+    if (score >= 45) return "E";
+    if (score >= 40) return "F";
+    return "G";
+  }
+  // Numeric 1-9
+  if (score >= 80) return 1;
+  if (score >= 70) return 2;
+  if (score >= 60) return 3;
+  if (score >= 50) return 4;
+  if (score >= 45) return 5;
+  if (score >= 40) return 6;
+  if (score >= 35) return 7;
+  if (score >= 30) return 8;
+  return 9;
+}
+
 /**
  * Build a pdfmake document definition for a Terminal Report (A4, portrait).
  */
@@ -43,48 +69,71 @@ export function buildTerminalReportPDF(data: TerminalReportData) {
     ? ((data.days_present / data.total_days) * 100).toFixed(1)
     : "0.0";
 
-  const subjectRows = data.subjects.map((s) => [
+  // Compute grades if not provided, using the school's grading format
+  const gradingFormat = data.grading_format || "numeric";
+  const subjectsWithGrades = data.subjects.map((s, idx) => ({
+    ...s,
+    total: (s.class_score || 0) + (s.exam_score || 0),
+    grade: s.grade || computeGrade((s.class_score || 0) + (s.exam_score || 0), gradingFormat),
+    rank: s.rank || idx + 1,
+  }));
+
+  const subjectRows = subjectsWithGrades.map((s) => [
     s.subject_name,
     s.class_score.toString(),
     s.exam_score.toString(),
     s.total.toString(),
-    s.grade,
-    s.rank.toString(),
+    String(s.grade),
+    String(s.rank),
   ]);
+
+  // Build header with optional school logo
+  const headerContent: any[] = [
+    {
+      text: data.school_name,
+      alignment: "center",
+      bold: true,
+      fontSize: 16,
+      color: "#1877F2",
+    },
+    {
+      text: data.school_motto || "A place to grow, learn, and lead.",
+      alignment: "center",
+      fontSize: 9,
+      italic: true,
+      color: "#65676B",
+    },
+    {
+      text: `Terminal Report — ${data.academic_year} ${data.term}`,
+      alignment: "center",
+      bold: true,
+      fontSize: 11,
+      margin: [0, 10, 0, 0],
+    },
+    {
+      text: `${data.class_name} (${data.department})`,
+      alignment: "center",
+      fontSize: 10,
+      color: "#65676B",
+    },
+  ];
+
+  // If school logo exists, add it as an image in the header
+  if (data.school_logo_url) {
+    headerContent.unshift({
+      image: data.school_logo_url,
+      width: 60,
+      height: 60,
+      alignment: "center",
+      margin: [0, 0, 0, 10],
+    });
+  }
 
   return {
     pageSize: "A4",
     pageMargins: [40, 60, 40, 60],
-    header: [
-      {
-        text: data.school_name,
-        alignment: "center",
-        bold: true,
-        fontSize: 16,
-        color: "#1877F2",
-      },
-      {
-        text: data.school_motto || "A place to grow, learn, and lead.",
-        alignment: "center",
-        fontSize: 9,
-        italic: true,
-        color: "#65676B",
-      },
-      {
-        text: `Terminal Report — ${data.academic_year} ${data.term}`,
-        alignment: "center",
-        bold: true,
-        fontSize: 11,
-        margin: [0, 10, 0, 0],
-      },
-      {
-        text: `${data.class_name} (${data.department})`,
-        alignment: "center",
-        fontSize: 10,
-        color: "#65676B",
-      },
-    ],
-    footer: [
+    header: headerContent,
+    footer: (pageNumber: number, totalPages: number) => [
       {
         text: `Generated on ${data.generated_at} — Page ${pageNumber} of ${totalPages}`,
         alignment: "center",
@@ -142,8 +191,8 @@ export function buildTerminalReportPDF(data: TerminalReportData) {
           {
             width: "50%",
             text: [
-              { text: "Overall Total: ", bold: true }, data.overall_total.toString(), "\n",
-              { text: "Overall Average: ", bold: true }, data.overall_average.toFixed(2), "\n",
+              { text: "Overall Total: ", bold: true }, subjectsWithGrades.reduce((sum, s) => sum + s.total, 0).toString(), "\n",
+              { text: "Overall Average: ", bold: true }, (subjectsWithGrades.reduce((sum, s) => sum + s.total, 0) / subjectsWithGrades.length).toFixed(2), "\n",
               { text: "Class Position: ", bold: true }, `${data.class_position} of class`, "\n",
             ],
           },
@@ -173,6 +222,31 @@ export function buildTerminalReportPDF(data: TerminalReportData) {
           { text: "Headmaster: ", bold: true }, data.headmaster_remarks || "No remarks", "\n",
         ],
       },
+      // Headmaster signature
+      {
+        columns: [
+          {
+            width: "50%",
+            text: [
+              { text: "_________________________", alignment: "center", fontSize: 10 },
+              { text: "Headmaster Signature", alignment: "center", fontSize: 9, color: "#65676B" },
+            ],
+          },
+          {
+            width: "50%",
+            text: data.headmaster_signature_url
+              ? [
+                  { image: data.headmaster_signature_url, width: 80, height: 30, alignment: "center" },
+                  { text: "Headmaster", alignment: "center", fontSize: 9, color: "#65676B" },
+                ]
+              : [
+                  { text: "_________________________", alignment: "center", fontSize: 10 },
+                  { text: "Headmaster", alignment: "center", fontSize: 9, color: "#65676B" },
+                ],
+          },
+        ],
+        margin: [0, 20, 0, 0],
+      },
       {
         text: data.is_published === 1
           ? "This report has been published by the Headmaster."
@@ -190,8 +264,12 @@ export function buildTerminalReportPDF(data: TerminalReportData) {
 /**
  * Generate a Terminal Report PDF and trigger download.
  */
-export async function downloadTerminalReportPDF(data: TerminalReportData, filename?: string) {
-  const docDefinition = buildTerminalReportPDF(data);
+export async function downloadTerminalReportPDF(data: TerminalReportData, filename?: string, schoolLogoUrl?: string, headmasterSignatureUrl?: string) {
+  const docDefinition = buildTerminalReportPDF({
+    ...data,
+    school_logo_url: schoolLogoUrl,
+    headmaster_signature_url: headmasterSignatureUrl,
+  });
   const fileName = filename || `TerminalReport_${data.admission_no}_${data.academic_year}_${data.term}.pdf`;
 
   pdfMake.createPdf(docDefinition).download(fileName);
@@ -200,7 +278,11 @@ export async function downloadTerminalReportPDF(data: TerminalReportData, filena
 /**
  * Open Terminal Report PDF in a new tab (for preview).
  */
-export async function openTerminalReportPDF(data: TerminalReportData) {
-  const docDefinition = buildTerminalReportPDF(data);
+export async function openTerminalReportPDF(data: TerminalReportData, schoolLogoUrl?: string, headmasterSignatureUrl?: string) {
+  const docDefinition = buildTerminalReportPDF({
+    ...data,
+    school_logo_url: schoolLogoUrl,
+    headmaster_signature_url: headmasterSignatureUrl,
+  });
   pdfMake.createPdf(docDefinition).open();
 }

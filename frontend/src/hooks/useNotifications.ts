@@ -52,6 +52,20 @@ export function useNotifications() {
     }
   }, [fetchNotifications, fetchUnreadCount, showToast]);
 
+  /** Marks every unread notification read (uses the per-item endpoint; one toast at the end). */
+  const markAllAsRead = useCallback(async () => {
+    const unread = notifications.filter((n) => n.is_read === 0);
+    if (unread.length === 0) return;
+    try {
+      await Promise.all(unread.map((n) => apiRequest(`/api/notifications/${n.id}/read`, { method: "PUT" })));
+      await fetchNotifications();
+      await fetchUnreadCount();
+      showToast("info", "All notifications marked as read");
+    } catch (err: any) {
+      showToast("error", "Failed to mark all as read", err.message);
+    }
+  }, [notifications, fetchNotifications, fetchUnreadCount, showToast]);
+
   useEffect(() => {
     fetchNotifications();
     fetchUnreadCount();
@@ -69,6 +83,7 @@ export function useNotifications() {
     unreadCount,
     loading,
     markAsRead,
+    markAllAsRead,
     refresh: () => {
       fetchNotifications();
       fetchUnreadCount();

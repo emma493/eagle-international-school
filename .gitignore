@@ -41,3 +41,6 @@ wrangler.toml.local
 # Misc
 *.log
 coverage/
+
+# Backend blueprint with real secrets (restore from Later/ when needed)
+Later/

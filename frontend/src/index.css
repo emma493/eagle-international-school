@@ -20,6 +20,48 @@
     --divider: #CED0D4;
     --bg-hover: #F2F2F2;
     --bg-secondary: #E4E6EB;
+
+    /* Shadows */
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.12);
+    --shadow-login: 0 2px 4px rgba(0, 0, 0, 0.10), 0 8px 16px rgba(0, 0, 0, 0.10);
+    --shadow-focus: 0 0 0 2px rgba(24, 119, 242, 0.20);
+
+    /* Status pairs (background / text) */
+    --status-good-bg: #E6F4EA;
+    --status-good-text: #1E7B34;
+    --status-attention-bg: #FFF4D6;
+    --status-attention-text: #8A6100;
+    --status-problem-bg: #FFE5E6;
+    --status-problem-text: #C2262B;
+    --status-info-bg: #E7F3FF;
+    --status-info-text: #1877F2;
+  }
+
+  html {
+    /* Keeps the page from shifting sideways when a route has no scrollbar. */
+    scrollbar-gutter: stable;
+  }
+
+  /* One visible keyboard focus ring for everything interactive. */
+  :focus-visible {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 2px;
+  }
+
+  /* The page heading takes focus on navigation; it is not interactive, so no ring. */
+  main h1:focus {
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   html,
@@ -173,15 +215,9 @@
     color: var(--status-info-text);
   }
 
+  /* Navigation row: 48px, 8px radius. Active = blue tint with blue text and icon. */
   .sidebar-item {
-    height: 52px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    gap: 12px;
-    color: var(--text-primary);
-    transition: background-color 100ms ease;
+    @apply flex h-btn w-full items-center gap-3 rounded-card px-3 font-semibold text-text-primary transition-colors;
   }
 
   .sidebar-item:hover {
@@ -193,20 +229,18 @@
     background-color: var(--brand-blue-tint);
   }
 
-  .sidebar-item.active .icon-circle {
-    background-color: var(--brand-blue);
-    color: #FFFFFF;
+  /* Round 40px icon button for the top bar (grey circle on hover). */
+  .icon-btn {
+    @apply relative inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-text-primary transition-colors;
   }
 
-  .icon-circle {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+  .icon-btn:hover {
     background-color: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
+  }
+
+  .icon-btn[aria-expanded="true"] {
+    color: var(--brand-blue);
+    background-color: var(--brand-blue-tint);
   }
 
   .sentence-case {
@@ -215,19 +249,28 @@
 }
 
 @layer utilities {
-  .shadow-card {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  }
-
-  .shadow-login {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.10), 0 8px 16px rgba(0, 0, 0, 0.10);
-  }
-
-  .shadow-focus {
-    box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.20);
-  }
-
   .text-sentence {
     text-transform: none;
   }
+
+  /* Bottom tab bar sizes include the device safe area (home indicator). */
+  .h-tabbar-safe {
+    height: calc(theme("spacing.tabbar") + env(safe-area-inset-bottom, 0px));
+  }
+  .pb-tabbar-safe {
+    padding-bottom: calc(theme("spacing.tabbar") + env(safe-area-inset-bottom, 0px));
+  }
+  .bottom-tabbar-safe {
+    bottom: calc(theme("spacing.tabbar") + env(safe-area-inset-bottom, 0px));
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Native search fields draw their own clear button; the SearchInput supplies one. */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
 }

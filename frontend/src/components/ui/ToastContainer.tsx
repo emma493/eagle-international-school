@@ -12,14 +12,14 @@ export function ToastContainer() {
 
   const addToast = useCallback(
     (toast: Omit<ToastState, "id">) => {
-      const id = ++toastId;
+      const id = String(++toastId);
       setToasts((prev) => [...prev, { ...toast, id }]);
       return id;
     },
     []
   );
 
-  const removeToast = useCallback((id: number) => {
+  const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 

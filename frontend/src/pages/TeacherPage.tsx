@@ -1,82 +1,33 @@
-import React from "react";
-
-const SCHOOL_NAME = "Eagle International School";
+import React, { useEffect, useCallback, useState } from "react";
+import { Link } from "react-router-dom";
+import { apiJson } from "@/lib/api";
+import { auth } from "@/firebase/config";
+import { useLiveSignal } from "@/hooks/useLiveSignal";
+import { NAV } from "@/components/layout/nav";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Icon } from "@/components/ui/icons";
 
 export default function TeacherPage() {
+  const [cash, setCash] = useState<number | null>(null);
+  const load = useCallback(() => { apiJson("/api/dashboard").then((d) => setCash(d.cash_in_hand)).catch(() => {}); }, []);
+  useEffect(load, [load]);
+  useLiveSignal(auth.currentUser ? `teacher_${auth.currentUser.uid}` : null, load);
   return (
-    <div className="bg-neutral-page min-h-screen p-4 lg:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="card p-6 shadow-card mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
-              T
-            </div>
-            <h1 className="text-28 font-bold text-text-primary sentence-case">
-              Teacher Portal
-            </h1>
-          </div>
-          <p className="text-text-secondary">
-            Classroom operations for {SCHOOL_NAME}. Mobile-first design.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <div className="card p-5 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">
-              Cash in hand
-            </p>
-            <p className="text-3xl font-bold text-brand-blue">GHS —</p>
-            <p className="text-text-secondary text-xs">
-              To reconcile with headmaster
-            </p>
-          </div>
-          <div className="card p-5 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">
-              Students present today
-            </p>
-            <p className="text-3xl font-bold text-success-green">—</p>
-          </div>
-          <div className="card p-5 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">
-              Pending sync
-            </p>
-            <p className="text-3xl font-bold text-warning-amber">—</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card p-6 shadow-card">
-            <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
-              Daily attendance
-            </h3>
-            <p className="text-text-secondary text-xs mb-4">
-              Mark present / absent / late for your assigned class.
-            </p>
-            <button className="btn-primary w-full">Take attendance</button>
-          </div>
-          <div className="card p-6 shadow-card">
-            <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
-              Canteen collection
-            </h3>
-            <p className="text-text-secondary text-xs mb-4">
-              1 day (GHS 20) &bull; 1 week (GHS 100) &bull; 1 month (GHS 400)
-            </p>
-            <button className="btn-primary w-full mb-3">Collect payment</button>
-            <button className="btn-secondary w-full">View pending collections</button>
-          </div>
-        </div>
-
-        <div className="mt-8 card p-6 shadow-card">
-          <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">
-            Examination &amp; terminal reports
-          </h3>
-          <p className="text-text-secondary text-xs mb-4">
-            Enter class scores (50%) and exam scores (50%), attendance,
-            conduct, and remarks. Generate draft PDF reports offline.
-          </p>
-          <button className="btn-primary w-full">Enter scores</button>
-        </div>
+    <PageContainer size="narrow">
+      <PageHeader title="Teacher portal" />
+      <div className="card mb-4 p-5 shadow-card">
+        <p className="text-meta font-semibold text-text-secondary">Cash in hand to reconcile</p>
+        <p className="text-display font-bold tabular-nums text-brand-blue">GHS {cash == null ? "—" : cash.toFixed(2)}</p>
+        <p className="text-meta text-text-secondary">Hand this to the headmaster to clear it.</p>
       </div>
-    </div>
+      <div className="grid grid-cols-1 gap-3">
+        {NAV.teacher.slice(1).map((i) => (
+          <Link key={i.path} to={i.path} className="btn-secondary inline-flex items-center justify-center gap-2 text-center">
+            <Icon name={i.icon} size={20} /> {i.label}
+          </Link>
+        ))}
+      </div>
+    </PageContainer>
   );
 }

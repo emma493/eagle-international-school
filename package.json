@@ -1,9 +1,9 @@
 {
   "name": "eagle-school",
   "private": true,
-  "workspaces": ["frontend", "worker"],
+  "workspaces": ["frontend"],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=worker\"",
+    "dev": "npm run dev --workspace=frontend",
     "install:all": "npm install --workspaces"
   },
   "devDependencies": {

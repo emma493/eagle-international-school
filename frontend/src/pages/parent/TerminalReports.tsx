@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { DocumentIcon } from "@/components/ui/icons";
 import { downloadTerminalReportPDF } from "@/lib/pdfmake";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { useToast } from "@/hooks/useToast";
 
 export default function ParentTerminalReportsPage() {
@@ -57,7 +59,7 @@ export default function ParentTerminalReportsPage() {
 
   if (loading) {
     return (
-      <div className="bg-neutral-page min-h-screen p-4">
+      <div className="p-4 md:p-6">
         <div className="card p-6 shadow-card text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto mb-4"></div>
           <p className="text-text-secondary">Loading reports…</p>
@@ -67,14 +69,14 @@ export default function ParentTerminalReportsPage() {
   }
 
   return (
-    <div className="bg-neutral-page min-h-screen p-4 lg:p-6">
+    <div className="p-4 md:p-6">
       <div className="max-w-xl mx-auto">
         <div className="card p-5 shadow-card mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
-              📄
+            <div className="w-10 h-10 bg-brand-blue-tint text-brand-blue rounded-full flex items-center justify-center">
+              <DocumentIcon />
             </div>
-            <h2 className="text-20 font-bold text-text-primary sentence-case">Terminal Reports</h2>
+            <h2 className="text-title font-bold text-text-primary sentence-case">Terminal Reports</h2>
           </div>
           <p className="text-text-secondary text-sm">
             Download your child's published end-of-term report PDFs.
@@ -83,7 +85,7 @@ export default function ParentTerminalReportsPage() {
 
         {reports.length === 0 ? (
           <div className="card p-8 shadow-card text-center">
-            <div className="text-4xl mb-4">📄</div>
+            <div className="text-4xl mb-4"><DocumentIcon /></div>
             <p className="text-text-secondary text-sm">
               No published reports available yet. Reports appear here once the Headmaster publishes them.
             </p>
@@ -97,7 +99,7 @@ export default function ParentTerminalReportsPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <div className="font-500 text-text-primary">{report.student_name}</div>
+                    <div className="font-medium text-text-primary">{report.student_name}</div>
                     <div className="text-text-secondary text-xs">{report.admission_no}</div>
                   </div>
                   <div className="text-right">
@@ -106,9 +108,7 @@ export default function ParentTerminalReportsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="badge badge-good text-[10px] px-2 py-1">
-                    Published
-                  </span>
+                  <StatusPill status="published" />
                   <span className="text-text-secondary text-xs">
                     {report.class_name} &bull; {report.department}
                   </span>
@@ -117,7 +117,7 @@ export default function ParentTerminalReportsPage() {
                   variant="primary"
                   fullWidth
                   onClick={() => downloadPDF(report)}
-                  className="text-xs h-40"
+                  className="text-xs h-10"
                 >
                   Download PDF
                 </Button>

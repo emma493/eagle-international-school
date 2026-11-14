@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, readError } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { useToast } from "@/hooks/useToast";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -11,12 +12,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   books: "Books",
   canteen: "Canteen",
   dues: "Dues",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  paid: "text-success-green",
-  partial: "text-warning-amber",
-  owing: "text-alert-red",
 };
 
 export default function FeeManagementPage() {
@@ -83,16 +78,16 @@ export default function FeeManagementPage() {
 
     setSubmitting(true);
     try {
-      await apiRequest("/api/fee-payments", {
+      const res = await apiRequest("/api/fee-payments", {
         method: "POST",
         body: JSON.stringify({
           student_id: studentId,
           ledger_id: ledgerId,
           amount: parseFloat(amount),
           payment_source: "cash",
-          recorded_by: "headmaster_uid",
         }),
       });
+      if (!res.ok) throw new Error(await readError(res));
       showToast("success", "Payment recorded", "Payment applied to fee ledger");
       await fetchLedger();
     } catch (err: any) {
@@ -102,18 +97,11 @@ export default function FeeManagementPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      paid: "badge badge-good",
-      partial: "badge badge-attention",
-      owing: "badge badge-problem",
-    };
-    return <span className={colors[status] || "badge badge-info"}>{status}</span>;
-  };
+  const getStatusBadge = (status: string) => <StatusPill status={status} />;
 
   if (loading) {
     return (
-      <div className="bg-neutral-page min-h-screen p-4">
+      <div className="p-4 md:p-6">
         <div className="card p-6 shadow-card text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto mb-4"></div>
           <p className="text-text-secondary">Loading fee ledger…</p>
@@ -127,11 +115,11 @@ export default function FeeManagementPage() {
     .reduce((sum, l) => sum + (l.amount_billed - (l.amount_paid || 0)), 0);
 
   return (
-    <div className="bg-neutral-page min-h-screen p-8 lg:p-12">
+    <div className="p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-28 font-bold text-text-primary sentence-case">Fee Management</h1>
+            <h1 className="text-display font-bold text-text-primary sentence-case">Fee Management</h1>
             <p className="text-text-secondary">
               Issue fees (school fees, printing fees, books, canteen, dues) and record payments.
             </p>
@@ -141,7 +129,7 @@ export default function FeeManagementPage() {
 
         {/* Issue fee form */}
         <div className="card p-6 shadow-card mb-8">
-          <h3 className="text-text-primary font-600 text-sm mb-4 sentence-case">Issue New Fee</h3>
+          <h3 className="text-text-primary font-semibold text-sm mb-4 sentence-case">Issue New Fee</h3>
           <form onSubmit={issueFee} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <Input
               label="Student ID"
@@ -165,11 +153,11 @@ export default function FeeManagementPage() {
               required
             />
             <div className="flex flex-col">
-              <label className="text-text-secondary text-xs font-500 mb-1 sentence-case">Category</label>
+              <label className="text-text-secondary text-xs font-medium mb-1 sentence-case">Category</label>
               <select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-                className="w-full h-52 px-4 text-17 border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
+                className="w-full h-input px-4 text-body-lg border border-border-input rounded-input bg-card text-text-primary focus:border-brand-blue focus:ring-2 ring-brand-blue/20 focus:outline-none"
               >
                 {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                   <option key={key} value={key}>
@@ -203,15 +191,15 @@ export default function FeeManagementPage() {
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="card p-5 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">Total Entries</p>
+            <p className="text-text-secondary text-xs font-semibold mb-1 uppercase tracking-wider">Total Entries</p>
             <p className="text-3xl font-bold text-text-primary">{ledger.length}</p>
           </div>
           <div className="card p-5 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">Total Owing</p>
+            <p className="text-text-secondary text-xs font-semibold mb-1 uppercase tracking-wider">Total Owing</p>
             <p className="text-3xl font-bold text-alert-red">GHS {totalOwing.toFixed(2)}</p>
           </div>
           <div className="card p-5 shadow-card">
-            <p className="text-text-secondary text-xs font-600 mb-1 uppercase tracking-wider">Paid</p>
+            <p className="text-text-secondary text-xs font-semibold mb-1 uppercase tracking-wider">Paid</p>
             <p className="text-3xl font-bold text-success-green">
               {ledger.filter((l) => l.status === "paid").length}
             </p>
@@ -223,27 +211,27 @@ export default function FeeManagementPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-divider">
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Student</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Category</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider">Description</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Billed</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Paid</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-center">Status</th>
-                <th className="pb-3 text-text-secondary text-xs font-600 uppercase tracking-wider text-right">Action</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Student</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Category</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider">Description</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Billed</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Paid</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-center">Status</th>
+                <th className="pb-3 text-text-secondary text-xs font-semibold uppercase tracking-wider text-right">Action</th>
               </tr>
             </thead>
             <tbody>
               {ledger.map((entry) => (
                 <tr key={entry.id} className="border-b border-divider/50 hover:bg-neutral-hover transition-colors">
                   <td className="py-4 text-text-primary">
-                    <div className="font-500">{entry.student_name}</div>
+                    <div className="font-medium">{entry.student_name}</div>
                     <div className="text-text-secondary text-xs">{entry.admission_no}</div>
                   </td>
                   <td className="py-4 text-text-secondary text-sm sentence-case">
                     {CATEGORY_LABELS[entry.category] || entry.category}
                   </td>
                   <td className="py-4 text-text-secondary text-sm">{entry.description}</td>
-                  <td className="py-4 text-text-primary text-right font-500">
+                  <td className="py-4 text-text-primary text-right font-medium">
                     GHS {parseFloat(entry.amount_billed).toFixed(2)}
                   </td>
                   <td className="py-4 text-text-secondary text-right">
@@ -254,7 +242,7 @@ export default function FeeManagementPage() {
                     {entry.status !== "paid" ? (
                       <Button
                         variant="secondary"
-                        className="text-xs h-32 px-3"
+                        className="text-xs h-9 px-3"
                         onClick={() => recordPayment(entry.id, entry.student_id)}
                       >
                         Record Payment
