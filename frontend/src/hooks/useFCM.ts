@@ -35,7 +35,9 @@ export function useFCM() {
         setState((prev) => ({ ...prev, isSupported: true, isLoading: true }));
 
         messaging = getMessaging(app);
-        const permission = await Notification.requestPermission();
+        // Never opens the browser prompt by itself: the custom NotificationPrompt asks first,
+        // then calls requestPermission(). Here we only resume when permission was already granted.
+        const permission = Notification.permission;
         setState((prev) => ({ ...prev, permission }));
 
         if (permission === "granted") {

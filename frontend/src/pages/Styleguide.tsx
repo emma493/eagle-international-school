@@ -31,6 +31,8 @@ import { Table, type Column } from "@/components/ui/Table";
 import { LoadMore, Pagination } from "@/components/ui/Pagination";
 import { FilterBar, FilterChip } from "@/components/ui/FilterBar";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Alert } from "@/components/ui/Alert";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useToast } from "@/hooks/useToast";
 
 /**
@@ -245,6 +247,18 @@ export default function Styleguide() {
             Open bottom sheet
           </Button>
         </Row>
+      </Section>
+
+      <Section id="sg-alert" title="Alert and PasswordInput">
+        <div className="grid gap-3 md:grid-cols-2">
+          <Alert tone="error" title="Wrong email, phone or password">Check what you typed and try again.</Alert>
+          <Alert tone="warning" title="You are offline">Connect to the internet to sign in.</Alert>
+          <Alert tone="info" title="Ask the school to reset it">Contact the headmaster or the school office.</Alert>
+          <Alert tone="success">Password changed.</Alert>
+        </div>
+        <div className="mt-4 max-w-sm">
+          <PasswordInput label="Password" defaultValue="secret123" />
+        </div>
       </Section>
 
       <Section id="sg-tabs" title="Tabs and SegmentedControl">

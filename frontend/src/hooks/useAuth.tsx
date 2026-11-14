@@ -18,6 +18,11 @@ interface AuthState {
   loading: boolean;
   /** Why the last session was ended by the system (disabled account, expired session…). Shown on the login page. */
   notice: string;
+  /** True after the system ended the session because it expired. Cleared on the next sign-in attempt or with dismissExpired. */
+  sessionExpired: boolean;
+  dismissExpired: () => void;
+  /** Time of the last successful check with the worker (used by the maintenance screen). */
+  lastChecked: number | null;
   signIn: (emailOrPhone: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** Force a token refresh and re-read role + maintenance state from the worker. */
@@ -47,12 +52,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [maintenance, setMaintenance] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [lastChecked, setLastChecked] = useState<number | null>(null);
   const endingRef = useRef(false);
 
-  const endSession = useCallback(async (message: string) => {
+  const endSession = useCallback(async (message: string, expired = false) => {
     if (endingRef.current) return;
     endingRef.current = true;
     setNotice(message);
+    setSessionExpired(expired);
     try { await fbSignOut(auth); } finally { endingRef.current = false; }
   }, []);
 
@@ -65,11 +73,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRole(me.role as Role);
         setProfile({ id: me.id, full_name: me.full_name, school_name: me.school_name, logo_url: me.logo_url });
         setMaintenance(!!me.maintenance);
+        setLastChecked(Date.now());
         return true;
       }
-      if (res.status === 401) { await endSession("Your session has expired. Please sign in again."); return false; }
+      if (res.status === 401) { await endSession("Your session has expired. Please sign in again.", true); return false; }
       const body = await res.json().catch(() => ({}));
-      if (res.status === 403) { await endSession(body.error || "You don't have access to this system."); return false; }
+      if (res.status === 403) {
+        // Browser-only dev: Firebase sign-in succeeded but no local user record exists yet.
+        // Create one from the Firebase custom claim so the user can log in (100% browser storage).
+        if (body.code === "no_role") {
+          try {
+            const claim = String((await u.getIdTokenResult()).claims.role ?? "");
+            if (ROLES.includes(claim)) {
+              await db.users.add({
+                id: u.uid,
+                role: claim as Role,
+                full_name: u.displayName || u.email || "User",
+                email: u.email ?? undefined,
+                is_active: 1,
+                updated_at: Date.now(),
+              });
+              const retry = await apiRequest("/api/me");
+              if (retry.ok) {
+                const me = await retry.json();
+                setRole(me.role as Role);
+                setProfile({
+                  id: me.id,
+                  full_name: me.full_name,
+                  school_name: me.school_name,
+                  logo_url: me.logo_url,
+                });
+                setMaintenance(!!me.maintenance);
+                setLastChecked(Date.now());
+                return true;
+              }
+            }
+          } catch {
+            // fall through to endSession below
+          }
+        }
+        await endSession(body.error || "You don't have access to this system.");
+        return false;
+      }
       if (res.status === 429) return true; // transient; keep the claim-based role
     } catch {
       // Offline or worker unreachable: keep working from the cached sign-in and the token's role claim.
@@ -96,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadMe]);
 
   useEffect(() => {
-    const onExpired = () => endSession("Your session has expired. Please sign in again.");
+    const onExpired = () => endSession("Your session has expired. Please sign in again.", true);
     const onMaint = () => setMaintenance(true);
     const recheck = () => { if (auth.currentUser && navigator.onLine) loadMe(auth.currentUser); };
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
@@ -121,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (emailOrPhone: string, password: string) => {
     setNotice("");
+    setSessionExpired(false);
     try {
       await signInWithEmailAndPassword(auth, normalizeLoginIdentifier(emailOrPhone), password);
     } catch (err) {
@@ -135,6 +181,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null); setRole(null); setProfile(null); setMaintenance(false);
   };
 
+  const dismissExpired = () => { setSessionExpired(false); setNotice(""); };
+
   const refreshClaims = async () => {
     const u = auth.currentUser;
     if (!u) return;
@@ -143,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, role, profile, maintenance, loading, notice, signIn, signOut, refreshClaims }}>
+    <Ctx.Provider value={{ user, role, profile, maintenance, loading, notice, sessionExpired, dismissExpired, lastChecked, signIn, signOut, refreshClaims }}>
       {children}
     </Ctx.Provider>
   );

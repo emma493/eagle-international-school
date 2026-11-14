@@ -9,6 +9,10 @@ import ParentPage from "./pages/ParentPage";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import MaintenanceScreen from "./pages/MaintenanceScreen";
 import { Button } from "./components/ui/Button";
+import { StatusScreen } from "./components/shared/StatusScreen";
+import SplashScreen from "./components/shared/SplashScreen";
+import NotificationPrompt from "./components/sync/NotificationPrompt";
+import { NotFoundOrForbidden, SessionExpiredScreen } from "./pages/StatusPages";
 
 // Admin sub-pages
 import BrandingPage from "./pages/admin/Branding";
@@ -38,7 +42,6 @@ import ParentTerminalReportsPage from "./pages/parent/TerminalReports";
 
 import AppShell from "./components/layout/AppShell";
 import { NotificationsProvider } from "./hooks/NotificationsContext";
-import { useFCM } from "./hooks/useFCM";
 
 // Shared pages
 import ProfilePage from "./pages/ProfilePage";
@@ -51,8 +54,7 @@ const styleguideRoute = Styleguide ? (
 ) : null;
 
 function App() {
-  const { user, loading, role, maintenance, signOut } = useAuth();
-  const { permission, token, isSupported, isLoading } = useFCM();
+  const { user, loading, role, maintenance, signOut, sessionExpired } = useAuth();
 
   const protectedRoutes: Record<string, string> = {
     admin: "/admin",
@@ -61,13 +63,7 @@ function App() {
     parent: "/parent",
   };
 
-  if (loading) {
-    return (
-      <div className="bg-neutral-page min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue"></div>
-      </div>
-    );
-  }
+  if (loading) return <SplashScreen />;
 
   if (!user) {
     return (
@@ -75,8 +71,9 @@ function App() {
         <ToastContainer />
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={sessionExpired ? <SessionExpiredScreen /> : <LoginPage />} />
           {styleguideRoute}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     );
@@ -85,13 +82,13 @@ function App() {
   // Signed in, but the token carries no valid role (and the worker could not be reached to say why).
   if (!role) {
     return (
-      <div className="bg-neutral-page min-h-screen flex items-center justify-center px-4">
-        <div className="card shadow-card p-8 max-w-md text-center">
-          <h1 className="text-display font-bold text-text-primary mb-2">Account not ready</h1>
-          <p className="text-text-secondary mb-6">Your account has no role yet. Please contact the school office.</p>
-          <Button variant="secondary" fullWidth onClick={signOut}>Sign out</Button>
-        </div>
-      </div>
+      <StatusScreen
+        tone="attention"
+        icon="user"
+        title="Account not ready"
+        description="Your account has no role yet. Please contact the school office."
+        actions={<Button variant="secondary" fullWidth onClick={signOut}>Sign out</Button>}
+      />
     );
   }
 
@@ -155,13 +152,14 @@ function App() {
       {role === "headmaster" && headmasterRoutes}
       {role === "teacher" && teacherRoutes}
       {role === "parent" && parentRoutes}
-      <Route path="*" element={<Navigate to={targetPath} replace />} />
+      <Route path="*" element={<NotFoundOrForbidden />} />
     </>
   );
 
   return (
     <BrowserRouter>
       <ToastContainer />
+      <NotificationPrompt />
       <NotificationsProvider>
         <AppShell>
           <Routes>{allRoutes}</Routes>
