@@ -18,11 +18,25 @@ import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Textarea } from "@/components/ui/Textarea";
+import { Tabs, TabPanel } from "@/components/ui/Tabs";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Toggle } from "@/components/ui/Toggle";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { RadioGroup } from "@/components/ui/Radio";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Stepper } from "@/components/ui/Stepper";
+import { Skeleton, SkeletonCard, SkeletonList, SkeletonText } from "@/components/ui/Skeleton";
+import { EmptyState, ErrorState, OfflineBanner, OfflineState } from "@/components/ui/StateViews";
+import { Table, type Column } from "@/components/ui/Table";
+import { LoadMore, Pagination } from "@/components/ui/Pagination";
+import { FilterBar, FilterChip } from "@/components/ui/FilterBar";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/hooks/useToast";
 
 /**
  * Dev-only visual review page (route /__styleguide, not in production builds).
  * Phase 4 part 1: buttons, fields, display primitives, dialogs.
- * Part 2 adds tabs, toggles, toasts, states, tables and the rest.
+ * Phase 4 part 2: tabs, selection controls, stepper, toasts, loading and empty states, table, pagination, filters, confirm dialog.
  */
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -48,7 +62,34 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 const VARIANTS: ButtonVariant[] = ["primary", "success", "secondary", "ghost", "danger"];
 const PEOPLE = [{ name: "Ama Mensah" }, { name: "Kofi Boateng" }, { name: "Esi Owusu" }, { name: "Yaw Darko" }, { name: "Abena Asare" }, { name: "Kwame Nkrumah" }];
 
+type Fee = { id: string; name: string; cls: string; owing: number; status: string };
+const FEES: Fee[] = [
+  { id: "1", name: "Ama Mensah", cls: "Basic 4", owing: 320.5, status: "owing" },
+  { id: "2", name: "Kofi Boateng", cls: "Creche", owing: 0, status: "paid" },
+  { id: "3", name: "Esi Owusu", cls: "JHS 2", owing: 150, status: "partial" },
+];
+const FEE_COLS: Column<Fee>[] = [
+  { key: "name", header: "Student", sortable: true, primary: true },
+  { key: "cls", header: "Class", sortable: true },
+  { key: "owing", header: "Owing", numeric: true, sortValue: (r) => r.owing, render: (r) => <Money amount={r.owing} kind={r.owing > 0 ? "owing" : "neutral"} /> },
+  { key: "status", header: "Status", render: (r) => <StatusPill status={r.status} /> },
+];
+
 export default function Styleguide() {
+  const { showToast } = useToast();
+  const [tab, setTab] = useState("overview");
+  const [att, setAtt] = useState("");
+  const [grading, setGrading] = useState("numeric");
+  const [on, setOn] = useState(true);
+  const [chk, setChk] = useState(true);
+  const [method, setMethod] = useState("cash");
+  const [date, setDate] = useState("2026-11-14");
+  const [step, setStep] = useState(1);
+  const [page, setPage] = useState(3);
+  const [shown, setShown] = useState(20);
+  const [fq, setFq] = useState("");
+  const [chips, setChips] = useState<string[]>(["owing"]);
+  const [confirm, setConfirm] = useState<"" | "danger" | "ack">("");
   const [phone, setPhone] = useState("");
   const [phoneBad, setPhoneBad] = useState("0991234567");
   const [phoneOk, setPhoneOk] = useState("0241234567");
@@ -205,6 +246,166 @@ export default function Styleguide() {
           </Button>
         </Row>
       </Section>
+
+      <Section id="sg-tabs" title="Tabs and SegmentedControl">
+        <Tabs
+          idBase="sg"
+          label="Student sections"
+          value={tab}
+          onChange={setTab}
+          items={[
+            { id: "overview", label: "Overview", icon: "user" },
+            { id: "guardians", label: "Guardians", icon: "users" },
+            { id: "fees", label: "Fees", icon: "wallet", count: 2 },
+            { id: "attendance", label: "Attendance", icon: "calendar-check" },
+            { id: "reports", label: "Reports", icon: "file-text" },
+            { id: "health", label: "Health", icon: "info", disabled: true },
+          ]}
+        />
+        <TabPanel idBase="sg" id={tab} active className="py-4 text-body text-text-secondary">
+          Content for the {tab} tab.
+        </TabPanel>
+        <Row label="Attendance (44px). Nothing chosen, then chosen with the arrow keys">
+          <SegmentedControl
+            label="Attendance for Ama Mensah"
+            value={att}
+            onChange={setAtt}
+            options={[
+              { value: "present", label: "Present", icon: "check-circle", tone: "good" },
+              { value: "absent", label: "Absent", icon: "x-circle", tone: "problem" },
+              { value: "late", label: "Late", icon: "clock", tone: "attention" },
+            ]}
+          />
+        </Row>
+        <Row label="Compact, not full width">
+          <SegmentedControl label="Grading format" size="compact" fullWidth={false} value={grading} onChange={setGrading} options={[{ value: "numeric", label: "1 to 9" }, { value: "letter", label: "A to F" }]} />
+          <SegmentedControl label="Disabled" size="compact" fullWidth={false} value="a" onChange={() => {}} disabled options={[{ value: "a", label: "One" }, { value: "b", label: "Two" }]} />
+        </Row>
+      </Section>
+
+      <Section id="sg-select" title="Toggle, Checkbox, Radio, DatePicker">
+        <div className="grid gap-x-6 md:grid-cols-2">
+          <div>
+            <Toggle checked={on} onChange={setOn} label="Maintenance mode" description="Staff and parents see a maintenance screen." />
+            <Toggle checked={false} onChange={() => {}} label="Disabled toggle" disabled />
+            <Checkbox checked={chk} onChange={(e) => setChk(e.target.checked)} label="Parent has agreed to apply this credit" description="Recorded with the offset." />
+            <Checkbox defaultChecked={false} onChange={() => {}} label="Unchecked with an error" error="Tick this to continue." />
+            <Checkbox checked disabled onChange={() => {}} label="Disabled" />
+          </div>
+          <div>
+            <RadioGroup label="Payment method" value={method} onChange={setMethod} options={[{ value: "cash", label: "Cash" }, { value: "momo", label: "Mobile money", description: "MTN, Vodafone, AirtelTigo" }, { value: "bank", label: "Bank transfer", disabled: true }]} />
+            <DatePicker label="Reopening date" value={date} onValueChange={setDate} helper="Shown to parents." />
+            <DatePicker label="Term end" value="" onValueChange={() => {}} error="Choose a date." />
+          </div>
+        </div>
+      </Section>
+
+      <Section id="sg-stepper" title="Stepper">
+        <Stepper
+          current={step}
+          onStepClick={setStep}
+          steps={[
+            { id: "s", label: "Student", hint: "Name and class" },
+            { id: "g", label: "Guardians", hint: "Phone first" },
+            { id: "p", label: "Pickup persons" },
+            { id: "h", label: "Health and address" },
+            { id: "r", label: "Review" },
+          ]}
+        />
+        <Row label="Move through the steps">
+          <Button variant="secondary" size="compact" disabled={step === 0} onClick={() => setStep(step - 1)}>
+            Back
+          </Button>
+          <Button size="compact" disabled={step === 4} onClick={() => setStep(step + 1)}>
+            Next
+          </Button>
+        </Row>
+      </Section>
+
+      <Section id="sg-toast" title="Toast">
+        <Row label="White card, 4px coloured border, icon, 4s, pauses on hover, errors use role=alert">
+          <Button variant="success" size="compact" onClick={() => showToast("success", "Payment recorded", "GHS 150.00 from Ama Mensah.")}>
+            Success
+          </Button>
+          <Button variant="danger" size="compact" onClick={() => showToast("error", "Could not save", "Check your connection and try again.")}>
+            Error
+          </Button>
+          <Button size="compact" onClick={() => showToast("info", "You have 3 new updates while you were away.")}>
+            Info
+          </Button>
+          <Button variant="secondary" size="compact" onClick={() => showToast("warning", "Saved on this device", "It will sync when you are back online.")}>
+            Warning
+          </Button>
+        </Row>
+      </Section>
+
+      <Section id="sg-states" title="Skeleton, EmptyState, ErrorState, OfflineState">
+        <Row label="Skeleton">
+          <div className="w-full max-w-md">
+            <Skeleton className="mb-3 h-6 w-1/3" />
+            <SkeletonText lines={3} />
+          </div>
+          <SkeletonCard className="w-48" />
+        </Row>
+        <SkeletonList rows={3} className="rounded-card border border-divider" />
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div className="rounded-card border border-divider">
+            <EmptyState compact title="No students yet" description="Add the first student to get started." actionLabel="Add student" onAction={() => {}} />
+          </div>
+          <div className="rounded-card border border-divider">
+            <ErrorState compact onRetry={() => {}} />
+          </div>
+          <div className="rounded-card border border-divider">
+            <OfflineState compact onRetry={() => {}} />
+          </div>
+        </div>
+        <OfflineBanner pending={3} className="mt-4" />
+      </Section>
+
+      <Section id="sg-table" title="Table, FilterBar, Pagination">
+        <FilterBar
+          search={{ value: fq, onChange: setFq, placeholder: "Search students" }}
+          activeCount={chips.length}
+          onClear={() => setChips([])}
+          resultLabel={`${FEES.length} students`}
+        >
+          {["owing", "partial", "paid"].map((c) => (
+            <FilterChip key={c} label={c.charAt(0).toUpperCase() + c.slice(1)} selected={chips.includes(c)} onToggle={() => setChips((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))} />
+          ))}
+        </FilterBar>
+        <Table className="mt-3" caption="Fee balances" columns={FEE_COLS} rows={FEES} rowKey={(r) => r.id} onRowClick={() => {}} />
+        <p className="mb-2 mt-4 text-caption font-semibold text-text-secondary">Loading, empty and error</p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Table caption="Loading" columns={FEE_COLS} rows={[]} rowKey={(r) => r.id} loading />
+          <Table caption="Empty" columns={FEE_COLS} rows={[]} rowKey={(r) => r.id} emptyTitle="No matching students" emptyDescription="Try clearing a filter." />
+          <Table caption="Error" columns={FEE_COLS} rows={[]} rowKey={(r) => r.id} error onRetry={() => {}} />
+        </div>
+        <Pagination className="mt-4" page={page} pageCount={12} onChange={setPage} />
+        <LoadMore shown={shown} total={84} noun="students" onLoadMore={() => setShown((n) => Math.min(84, n + 20))} />
+      </Section>
+
+      <Section id="sg-confirm" title="ConfirmDialog">
+        <Row label="Destructive, and with a consent checkbox">
+          <Button variant="danger" onClick={() => setConfirm("danger")}>
+            Disable account
+          </Button>
+          <Button variant="success" onClick={() => setConfirm("ack")}>
+            Apply credit
+          </Button>
+        </Row>
+      </Section>
+
+      <ConfirmDialog open={confirm === "danger"} onClose={() => setConfirm("")} onConfirm={() => setConfirm("")} tone="danger" title="Disable this account?" description="Kofi Mensah will be signed out and cannot log in until you enable the account again." confirmLabel="Disable account" />
+      <ConfirmDialog
+        open={confirm === "ack"}
+        onClose={() => setConfirm("")}
+        onConfirm={() => setConfirm("")}
+        tone="success"
+        title="Apply surplus credit?"
+        description="GHS 100.00 moves from credit to school fees."
+        confirmLabel="Apply credit"
+        requireAcknowledgement="The parent has agreed to this."
+      />
 
       <Modal
         open={modal}
